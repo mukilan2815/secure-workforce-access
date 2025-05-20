@@ -23,7 +23,7 @@ const Index = () => {
 
     try {
       const response = await LoginService.login(username, password);
-      
+      console.log("Login response:", response);
       // Save tokens and user type to localStorage
       localStorage.setItem("accessToken", response.access);
       localStorage.setItem("refreshToken", response.refresh);
