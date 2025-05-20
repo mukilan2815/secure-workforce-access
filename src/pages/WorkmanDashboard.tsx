@@ -1,27 +1,26 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { LoginService } from "@/services/auth-service";
-import { GatepassService, GatePass } from "@/services/gatepass-service";
+import { GatepassService } from "@/services/gatepass-service";
 import { motion, AnimatePresence } from "framer-motion";
+import { DashboardLayout } from "@/components/DashboardLayout";
+import { GatepassCard } from "@/components/GatepassCard";
+import { PlusCircle, Clock, ClipboardEdit, FileText } from "lucide-react";
 
 const WorkmanDashboard = () => {
   const [loading, setLoading] = useState(true);
-  const [pendingGatepasses, setPendingGatepasses] = useState<GatePass[]>([]);
-  const [approvedGatepasses, setApprovedGatepasses] = useState<GatePass[]>([]);
-  const [rejectedGatepasses, setRejectedGatepasses] = useState<GatePass[]>([]);
+  const [pendingGatepasses, setPendingGatepasses] = useState<any[]>([]);
+  const [approvedGatepasses, setApprovedGatepasses] = useState<any[]>([]);
+  const [rejectedGatepasses, setRejectedGatepasses] = useState<any[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [selectedGatepass, setSelectedGatepass] = useState<GatePass | null>(null);
+  const [selectedGatepass, setSelectedGatepass] = useState<any>(null);
   const [formData, setFormData] = useState({
     timeOut: "",
     timeIn: "",
@@ -33,7 +32,7 @@ const WorkmanDashboard = () => {
   useEffect(() => {
     // Check if user is logged in and is Workman
     const userType = localStorage.getItem("userType");
-    if (!userType || userType !== "WorkMen") {
+    if (!userType || (userType !== "WorkMen" && userType !== "workman")) {
       navigate("/");
       return;
     }
@@ -73,7 +72,7 @@ const WorkmanDashboard = () => {
     setIsDialogOpen(true);
   };
 
-  const handleOpenEditDialog = (gatepass: GatePass) => {
+  const handleOpenEditDialog = (gatepass: any) => {
     setIsEditMode(true);
     setSelectedGatepass(gatepass);
     setFormData({
@@ -86,19 +85,29 @@ const WorkmanDashboard = () => {
 
   const formatTimeForInput = (timeString: string) => {
     try {
-      // Handle time format HH:MM:SS
       return timeString.substring(0, 5); // Extract HH:MM for input
     } catch (e) {
-      return timeString;
+      return timeString || "";
     }
   };
 
   const getCurrentTime = () => {
     const now = new Date();
-    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    return `${String(now.getHours()).padStart(2, "0")}:${String(
+      now.getMinutes()
+    ).padStart(2, "0")}`;
   };
 
   const handleSubmit = async () => {
+    if (!formData.timeIn || !formData.timeOut || !formData.purpose) {
+      toast({
+        variant: "destructive",
+        title: "Missing information",
+        description: "Please fill in all the fields",
+      });
+      return;
+    }
+    
     try {
       if (isEditMode && selectedGatepass) {
         // Update existing gatepass
@@ -136,21 +145,6 @@ const WorkmanDashboard = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      const refreshToken = localStorage.getItem("refreshToken") || "";
-      await LoginService.logout(refreshToken);
-      navigate("/");
-    } catch (error) {
-      console.error("Logout error:", error);
-      // Force logout anyway
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("userType");
-      navigate("/");
-    }
-  };
-
   const handleDownloadPdf = async (gatepassId: number) => {
     try {
       await GatepassService.downloadGatepass(gatepassId);
@@ -168,156 +162,63 @@ const WorkmanDashboard = () => {
     }
   };
 
-  const formatTime = (timeString: string) => {
-    try {
-      // Handle time format HH:MM:SS
-      return timeString.substring(0, 5); // Extract HH:MM
-    } catch (e) {
-      return timeString;
-    }
-  };
-
-  const formatDateTime = (dateTimeString: string | null) => {
-    if (!dateTimeString) return "-";
-    try {
-      const date = new Date(dateTimeString);
-      return new Intl.DateTimeFormat('en-US', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }).format(date);
-    } catch (e) {
-      return dateTimeString;
-    }
-  };
-
-  const renderGatepassCard = (gatepass: GatePass, actions: React.ReactNode) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="mb-4"
+  const actionButton = (
+    <Button
+      onClick={handleOpenNewGatepassDialog}
+      size="sm"
+      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
     >
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="text-lg">Request #{gatepass.id}</CardTitle>
-              <CardDescription>Created: {formatDateTime(gatepass.created_at)}</CardDescription>
-            </div>
-            <Badge variant={
-              gatepass.approval_status === "approved" ? "success" :
-              gatepass.approval_status === "rejected" ? "destructive" :
-              "outline"
-            }>
-              {gatepass.approval_status.toUpperCase()}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <span className="font-medium">Time Out:</span>
-              <div>{formatTime(gatepass.time_out)}</div>
-            </div>
-            <div>
-              <span className="font-medium">Time In:</span>
-              <div>{formatTime(gatepass.time_in)}</div>
-            </div>
-            <div className="col-span-2">
-              <span className="font-medium">Purpose:</span>
-              <div className="mt-1 text-muted-foreground">{gatepass.purpose}</div>
-            </div>
-            
-            {gatepass.approval_status !== "pending" && (
-              <>
-                <div className="col-span-2">
-                  <span className="font-medium">Processed by:</span>
-                  <div>{gatepass.approved_by_username || "N/A"}</div>
-                </div>
-                <div className="col-span-2">
-                  <span className="font-medium">Processed at:</span>
-                  <div>{formatDateTime(gatepass.approved_at)}</div>
-                </div>
-              </>
-            )}
-            
-            {gatepass.approval_status === "rejected" && (
-              <div className="col-span-2">
-                <span className="font-medium">Rejection reason:</span>
-                <div className="text-red-500">{gatepass.rejection_reason || "No reason provided"}</div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-        {actions && (
-          <CardFooter className="pt-2 flex gap-2 justify-end">
-            {actions}
-          </CardFooter>
-        )}
-      </Card>
-    </motion.div>
+      <PlusCircle className="h-4 w-4 mr-1" />
+      New Gate Pass
+    </Button>
   );
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white">
-      <header className="bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Workman Dashboard</h1>
-          <Button variant="outline" onClick={handleLogout}>
-            Sign Out
-          </Button>
+    <DashboardLayout 
+      title="Workman Dashboard" 
+      subtitle="Welcome to the Gate Pass Management System" 
+      actionButton={actionButton}
+    >
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="relative w-16 h-16">
+            <div className="absolute top-0 left-0 w-full h-full rounded-full border-t-2 border-b-2 border-blue-500 animate-spin"></div>
+            <div className="absolute top-2 left-2 w-12 h-12 rounded-full border-t-2 border-b-2 border-indigo-500 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+            <div className="absolute top-4 left-4 w-8 h-8 rounded-full border-t-2 border-b-2 border-blue-400 animate-spin"></div>
+          </div>
         </div>
-      </header>
-      
-      <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-8"
-        >
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-xl p-6 text-white">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-bold mb-2">Welcome to the Gate Pass Management System</h2>
-                <p className="opacity-90">
-                  Request, view and manage your gate passes.
-                </p>
-              </div>
-              <Button 
-                onClick={handleOpenNewGatepassDialog}
-                className="bg-white text-blue-600 hover:bg-blue-50"
+      ) : (
+        <Tabs defaultValue="pending" className="w-full">
+          <TabsList className="grid grid-cols-3 mb-8">
+            <TabsTrigger value="pending" className="relative">
+              Pending
+              {pendingGatepasses.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {pendingGatepasses.length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="approved">Approved</TabsTrigger>
+            <TabsTrigger value="rejected">Rejected</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="pending">
+            <AnimatePresence>
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
               >
-                New Gate Pass
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-        
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : (
-          <Tabs defaultValue="pending">
-            <TabsList className="grid grid-cols-3 mb-8">
-              <TabsTrigger value="pending">
-                Pending
-                {pendingGatepasses.length > 0 && (
-                  <span className="ml-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {pendingGatepasses.length}
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="approved">Approved</TabsTrigger>
-              <TabsTrigger value="rejected">Rejected</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="pending">
-              <AnimatePresence>
                 {pendingGatepasses.length === 0 ? (
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -328,24 +229,35 @@ const WorkmanDashboard = () => {
                     No pending gate passes
                   </motion.div>
                 ) : (
-                  pendingGatepasses.map(gatepass => (
-                    <div key={gatepass.id}>
-                      {renderGatepassCard(gatepass, (
-                        <Button 
+                  pendingGatepasses.map((gatepass) => (
+                    <GatepassCard 
+                      key={gatepass.id}
+                      gatepass={gatepass}
+                      actions={
+                        <Button
                           variant="outline"
+                          size="sm"
+                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
                           onClick={() => handleOpenEditDialog(gatepass)}
                         >
-                          Edit Request
+                          <ClipboardEdit className="h-4 w-4 mr-1" />
+                          Edit
                         </Button>
-                      ))}
-                    </div>
+                      }
+                    />
                   ))
                 )}
-              </AnimatePresence>
-            </TabsContent>
-            
-            <TabsContent value="approved">
-              <AnimatePresence>
+              </motion.div>
+            </AnimatePresence>
+          </TabsContent>
+
+          <TabsContent value="approved">
+            <AnimatePresence>
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+              >
                 {approvedGatepasses.length === 0 ? (
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -356,24 +268,34 @@ const WorkmanDashboard = () => {
                     No approved gate passes
                   </motion.div>
                 ) : (
-                  approvedGatepasses.map(gatepass => (
-                    <div key={gatepass.id}>
-                      {renderGatepassCard(gatepass, (
+                  approvedGatepasses.map((gatepass) => (
+                    <GatepassCard 
+                      key={gatepass.id}
+                      gatepass={gatepass}
+                      actions={
                         <Button
                           variant="outline"
+                          size="sm"
                           onClick={() => handleDownloadPdf(gatepass.id)}
+                          className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
                         >
                           Download PDF
                         </Button>
-                      ))}
-                    </div>
+                      }
+                    />
                   ))
                 )}
-              </AnimatePresence>
-            </TabsContent>
-            
-            <TabsContent value="rejected">
-              <AnimatePresence>
+              </motion.div>
+            </AnimatePresence>
+          </TabsContent>
+
+          <TabsContent value="rejected">
+            <AnimatePresence>
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+              >
                 {rejectedGatepasses.length === 0 ? (
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -384,82 +306,105 @@ const WorkmanDashboard = () => {
                     No rejected gate passes
                   </motion.div>
                 ) : (
-                  rejectedGatepasses.map(gatepass => (
-                    <div key={gatepass.id}>
-                      {renderGatepassCard(gatepass, (
-                        <Button 
+                  rejectedGatepasses.map((gatepass) => (
+                    <GatepassCard 
+                      key={gatepass.id}
+                      gatepass={gatepass}
+                      actions={
+                        <Button
                           variant="outline"
+                          size="sm"
+                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
                           onClick={() => handleOpenEditDialog(gatepass)}
                         >
-                          Update & Reapply
+                          <ClipboardEdit className="h-4 w-4 mr-1" />
+                          Edit & Resubmit
                         </Button>
-                      ))}
-                    </div>
+                      }
+                    />
                   ))
                 )}
-              </AnimatePresence>
-            </TabsContent>
-          </Tabs>
-        )}
-      </main>
-      
+              </motion.div>
+            </AnimatePresence>
+          </TabsContent>
+        </Tabs>
+      )}
+
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{isEditMode ? "Edit Gate Pass" : "New Gate Pass Request"}</DialogTitle>
+            <DialogTitle>
+              {isEditMode ? "Edit Gate Pass Request" : "New Gate Pass Request"}
+            </DialogTitle>
             <DialogDescription>
-              {isEditMode 
-                ? "Update your gate pass request details below."
-                : "Fill in the details for your gate pass request."}
+              Fill in the details below to {isEditMode ? "update your" : "submit a new"} gate pass request
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="timeOut">Time Out</Label>
+                <Label htmlFor="time-out" className="flex items-center gap-1">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  Time Out
+                </Label>
                 <Input
-                  id="timeOut"
+                  id="time-out"
                   type="time"
                   value={formData.timeOut}
-                  onChange={(e) => setFormData({...formData, timeOut: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, timeOut: e.target.value })
+                  }
+                  className="col-span-3"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="timeIn">Time In</Label>
+                <Label htmlFor="time-in" className="flex items-center gap-1">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  Time In
+                </Label>
                 <Input
-                  id="timeIn"
+                  id="time-in"
                   type="time"
                   value={formData.timeIn}
-                  onChange={(e) => setFormData({...formData, timeIn: e.target.value})}
+                  onChange={(e) =>
+                    setFormData({ ...formData, timeIn: e.target.value })
+                  }
+                  className="col-span-3"
                 />
               </div>
             </div>
-            
             <div className="space-y-2">
-              <Label htmlFor="purpose">Purpose</Label>
+              <Label htmlFor="purpose" className="flex items-center gap-1">
+                <FileText className="h-4 w-4 text-gray-500" />
+                Purpose
+              </Label>
               <Textarea
                 id="purpose"
-                placeholder="Enter the purpose of your visit..."
+                placeholder="Enter the purpose of your gate pass"
                 value={formData.purpose}
-                onChange={(e) => setFormData({...formData, purpose: e.target.value})}
-                className="min-h-[100px]"
+                onChange={(e) =>
+                  setFormData({ ...formData, purpose: e.target.value })
+                }
+                className="min-h-20"
               />
             </div>
           </div>
-          
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Cancel
+            </Button>
             <Button 
               onClick={handleSubmit}
-              disabled={!formData.timeIn || !formData.purpose}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
             >
-              {isEditMode ? "Update & Reapply" : "Submit Request"}
+              {isEditMode ? "Update" : "Submit"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </DashboardLayout>
   );
 };
 

@@ -2,22 +2,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
-import { LoginService } from "@/services/auth-service";
-import { GatepassService, GatePass } from "@/services/gatepass-service";
+import { GatepassService } from "@/services/gatepass-service";
 import { motion, AnimatePresence } from "framer-motion";
+import { DashboardLayout } from "@/components/DashboardLayout";
+import { GatepassCard } from "@/components/GatepassCard";
+import { Check, X, Download, Filter } from "lucide-react";
 
 const SSEDashboard = () => {
   const [loading, setLoading] = useState(true);
-  const [pendingGatepasses, setPendingGatepasses] = useState<GatePass[]>([]);
-  const [approvedGatepasses, setApprovedGatepasses] = useState<GatePass[]>([]);
-  const [rejectedGatepasses, setRejectedGatepasses] = useState<GatePass[]>([]);
-  const [selectedGatepass, setSelectedGatepass] = useState<GatePass | null>(null);
+  const [pendingGatepasses, setPendingGatepasses] = useState<any[]>([]);
+  const [approvedGatepasses, setApprovedGatepasses] = useState<any[]>([]);
+  const [rejectedGatepasses, setRejectedGatepasses] = useState<any[]>([]);
+  const [selectedGatepass, setSelectedGatepass] = useState<any>(null);
   const [isRejectionDialogOpen, setIsRejectionDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const { toast } = useToast();
@@ -26,7 +26,7 @@ const SSEDashboard = () => {
   useEffect(() => {
     // Check if user is logged in and is SSE
     const userType = localStorage.getItem("userType");
-    if (!userType || userType !== "SSE") {
+    if (!userType || (userType !== "SSE" && userType !== "sse")) {
       navigate("/");
       return;
     }
@@ -55,7 +55,7 @@ const SSEDashboard = () => {
     }
   };
 
-  const handleApprove = async (gatepass: GatePass) => {
+  const handleApprove = async (gatepass: any) => {
     try {
       await GatepassService.approveGatepass(gatepass.id);
       toast({
@@ -73,7 +73,7 @@ const SSEDashboard = () => {
     }
   };
 
-  const openRejectionDialog = (gatepass: GatePass) => {
+  const openRejectionDialog = (gatepass: any) => {
     setSelectedGatepass(gatepass);
     setRejectionReason("");
     setIsRejectionDialogOpen(true);
@@ -100,21 +100,6 @@ const SSEDashboard = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      const refreshToken = localStorage.getItem("refreshToken") || "";
-      await LoginService.logout(refreshToken);
-      navigate("/");
-    } catch (error) {
-      console.error("Logout error:", error);
-      // Force logout anyway
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("userType");
-      navigate("/");
-    }
-  };
-
   const handleDownloadPdf = async (gatepassId: number) => {
     try {
       await GatepassService.downloadGatepass(gatepassId);
@@ -132,146 +117,61 @@ const SSEDashboard = () => {
     }
   };
 
-  const formatTime = (timeString: string) => {
-    try {
-      // Handle time format HH:MM:SS
-      return timeString.substring(0, 5); // Extract HH:MM
-    } catch (e) {
-      return timeString;
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
     }
   };
-
-  const formatDateTime = (dateTimeString: string | null) => {
-    if (!dateTimeString) return "-";
-    try {
-      const date = new Date(dateTimeString);
-      return new Intl.DateTimeFormat('en-US', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }).format(date);
-    } catch (e) {
-      return dateTimeString;
-    }
-  };
-
-  const renderGatepassCard = (gatepass: GatePass, actions: React.ReactNode) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="mb-4"
-    >
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="text-lg">Request #{gatepass.id}</CardTitle>
-              <CardDescription>From: {gatepass.workman_username}</CardDescription>
-            </div>
-            <Badge variant={
-              gatepass.approval_status === "approved" ? "success" :
-              gatepass.approval_status === "rejected" ? "destructive" :
-              "outline"
-            }>
-              {gatepass.approval_status.toUpperCase()}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <span className="font-medium">Time Out:</span>
-              <div>{formatTime(gatepass.time_out)}</div>
-            </div>
-            <div>
-              <span className="font-medium">Time In:</span>
-              <div>{formatTime(gatepass.time_in)}</div>
-            </div>
-            <div className="col-span-2">
-              <span className="font-medium">Purpose:</span>
-              <div className="mt-1 text-muted-foreground">{gatepass.purpose}</div>
-            </div>
-            
-            {gatepass.approval_status !== "pending" && (
-              <>
-                <div className="col-span-2">
-                  <span className="font-medium">Processed by:</span>
-                  <div>{gatepass.approved_by_username || "N/A"}</div>
-                </div>
-                <div className="col-span-2">
-                  <span className="font-medium">Processed at:</span>
-                  <div>{formatDateTime(gatepass.approved_at)}</div>
-                </div>
-              </>
-            )}
-            
-            {gatepass.approval_status === "rejected" && (
-              <div className="col-span-2">
-                <span className="font-medium">Rejection reason:</span>
-                <div className="text-red-500">{gatepass.rejection_reason || "No reason provided"}</div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-        {actions && (
-          <CardFooter className="pt-2 flex gap-2 justify-end">
-            {actions}
-          </CardFooter>
-        )}
-      </Card>
-    </motion.div>
-  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white">
-      <header className="bg-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">SSE Dashboard</h1>
-          <Button variant="outline" onClick={handleLogout}>
-            Sign Out
-          </Button>
-        </div>
-      </header>
-      
-      <main className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-8"
+    <DashboardLayout 
+      title="SSE Dashboard" 
+      subtitle="Welcome to the Gate Pass Management System"
+      actionButton={
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-gray-200 text-gray-700"
         >
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-xl p-6 text-white">
-            <h2 className="text-xl font-bold mb-2">Welcome to the Gate Pass Management System</h2>
-            <p className="opacity-90">
-              As an SSE, you can review, approve or reject gate pass requests from workmen.
-            </p>
+          <Filter className="h-4 w-4 mr-1" />
+          <span className="hidden sm:inline">Filter</span>
+        </Button>
+      }
+    >
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <div className="relative w-16 h-16">
+            <div className="absolute top-0 left-0 w-full h-full rounded-full border-t-2 border-b-2 border-blue-500 animate-spin"></div>
+            <div className="absolute top-2 left-2 w-12 h-12 rounded-full border-t-2 border-b-2 border-indigo-500 animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+            <div className="absolute top-4 left-4 w-8 h-8 rounded-full border-t-2 border-b-2 border-blue-400 animate-spin"></div>
           </div>
-        </motion.div>
-        
-        {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : (
-          <Tabs defaultValue="pending">
-            <TabsList className="grid grid-cols-3 mb-8">
-              <TabsTrigger value="pending" className="relative">
-                Pending
-                {pendingGatepasses.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {pendingGatepasses.length}
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="approved">Approved</TabsTrigger>
-              <TabsTrigger value="rejected">Rejected</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="pending">
-              <AnimatePresence>
+        </div>
+      ) : (
+        <Tabs defaultValue="pending" className="w-full">
+          <TabsList className="grid grid-cols-3 mb-8">
+            <TabsTrigger value="pending" className="relative">
+              Pending
+              {pendingGatepasses.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {pendingGatepasses.length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="approved">Approved</TabsTrigger>
+            <TabsTrigger value="rejected">Rejected</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="pending">
+            <AnimatePresence>
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+              >
                 {pendingGatepasses.length === 0 ? (
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -282,34 +182,46 @@ const SSEDashboard = () => {
                     No pending gate passes to review
                   </motion.div>
                 ) : (
-                  pendingGatepasses.map(gatepass => (
-                    <div key={gatepass.id}>
-                      {renderGatepassCard(gatepass, (
+                  pendingGatepasses.map((gatepass) => (
+                    <GatepassCard
+                      key={gatepass.id}
+                      gatepass={gatepass}
+                      showWorkmanName={true}
+                      actions={
                         <>
-                          <Button 
-                            variant="outline" 
-                            className="text-red-500 hover:text-red-600"
+                          <Button
+                            variant="outline"
+                            size="sm" 
+                            className="border-red-200 text-red-500 hover:bg-red-50"
                             onClick={() => openRejectionDialog(gatepass)}
                           >
+                            <X className="h-4 w-4 mr-1" />
                             Reject
                           </Button>
                           <Button 
-                            variant="default"
+                            size="sm"
                             className="bg-green-600 hover:bg-green-700"
                             onClick={() => handleApprove(gatepass)}
                           >
+                            <Check className="h-4 w-4 mr-1" />
                             Approve
                           </Button>
                         </>
-                      ))}
-                    </div>
+                      }
+                    />
                   ))
                 )}
-              </AnimatePresence>
-            </TabsContent>
-            
-            <TabsContent value="approved">
-              <AnimatePresence>
+              </motion.div>
+            </AnimatePresence>
+          </TabsContent>
+
+          <TabsContent value="approved">
+            <AnimatePresence>
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+              >
                 {approvedGatepasses.length === 0 ? (
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -320,24 +232,36 @@ const SSEDashboard = () => {
                     No approved gate passes
                   </motion.div>
                 ) : (
-                  approvedGatepasses.map(gatepass => (
-                    <div key={gatepass.id}>
-                      {renderGatepassCard(gatepass, (
+                  approvedGatepasses.map((gatepass) => (
+                    <GatepassCard
+                      key={gatepass.id}
+                      gatepass={gatepass}
+                      showWorkmanName={true}
+                      actions={
                         <Button
                           variant="outline"
+                          size="sm"
                           onClick={() => handleDownloadPdf(gatepass.id)}
+                          className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
                         >
+                          <Download className="h-4 w-4 mr-1" />
                           Download PDF
                         </Button>
-                      ))}
-                    </div>
+                      }
+                    />
                   ))
                 )}
-              </AnimatePresence>
-            </TabsContent>
-            
-            <TabsContent value="rejected">
-              <AnimatePresence>
+              </motion.div>
+            </AnimatePresence>
+          </TabsContent>
+
+          <TabsContent value="rejected">
+            <AnimatePresence>
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+              >
                 {rejectedGatepasses.length === 0 ? (
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -348,20 +272,22 @@ const SSEDashboard = () => {
                     No rejected gate passes
                   </motion.div>
                 ) : (
-                  rejectedGatepasses.map(gatepass => (
-                    <div key={gatepass.id}>
-                      {renderGatepassCard(gatepass, null)}
-                    </div>
+                  rejectedGatepasses.map((gatepass) => (
+                    <GatepassCard
+                      key={gatepass.id}
+                      gatepass={gatepass}
+                      showWorkmanName={true}
+                    />
                   ))
                 )}
-              </AnimatePresence>
-            </TabsContent>
-          </Tabs>
-        )}
-      </main>
-      
+              </motion.div>
+            </AnimatePresence>
+          </TabsContent>
+        </Tabs>
+      )}
+
       <Dialog open={isRejectionDialogOpen} onOpenChange={setIsRejectionDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Reject Gate Pass</DialogTitle>
             <DialogDescription>
@@ -372,17 +298,27 @@ const SSEDashboard = () => {
             placeholder="Enter reason for rejection..."
             value={rejectionReason}
             onChange={(e) => setRejectionReason(e.target.value)}
-            className="min-h-[100px]"
+            className="min-h-[100px] resize-none focus:ring-red-500"
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRejectionDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleReject} disabled={!rejectionReason.trim()}>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsRejectionDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleReject} 
+              disabled={!rejectionReason.trim()}
+              className="bg-red-600 hover:bg-red-700"
+            >
               Reject Gate Pass
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </DashboardLayout>
   );
 };
 
