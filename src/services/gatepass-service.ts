@@ -19,15 +19,27 @@ export interface GatePass {
   updated_at: string;
 }
 
+// Create an axios instance with auth header
+const authAxios = () => {
+  const token = localStorage.getItem('accessToken');
+  return axios.create({
+    baseURL: API_URL,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : '',
+    }
+  });
+};
+
 export const GatepassService = {
   // SSE methods
   getSSEDashboardData: async () => {
-    const response = await axios.get(`${API_URL}/home/`);
+    const response = await authAxios().get(`${API_URL}/home/`);
     return response.data;
   },
 
   approveGatepass: async (gatepassId: number) => {
-    const response = await axios.post(`${API_URL}/home/`, {
+    const response = await authAxios().post(`${API_URL}/home/`, {
       gatepass_id: gatepassId,
       action: "approve",
     });
@@ -35,7 +47,7 @@ export const GatepassService = {
   },
 
   rejectGatepass: async (gatepassId: number, reason: string) => {
-    const response = await axios.post(`${API_URL}/home/`, {
+    const response = await authAxios().post(`${API_URL}/home/`, {
       gatepass_id: gatepassId,
       action: "reject",
       rejection_reason: reason,
@@ -45,12 +57,12 @@ export const GatepassService = {
 
   // Workman methods
   getWorkmanDashboardData: async () => {
-    const response = await axios.get(`${API_URL}/home/`);
+    const response = await authAxios().get(`${API_URL}/home/`);
     return response.data;
   },
 
   createGatepass: async (timeIn: string, timeOut: string, purpose: string) => {
-    const response = await axios.post(`${API_URL}/home/`, {
+    const response = await authAxios().post(`${API_URL}/home/`, {
       time_in: timeIn,
       time_out: timeOut,
       purpose: purpose,
@@ -59,7 +71,7 @@ export const GatepassService = {
   },
 
   updateGatepass: async (gatepassId: number, timeIn: string, timeOut: string, purpose: string) => {
-    const response = await axios.put(`${API_URL}/home/`, {
+    const response = await authAxios().put(`${API_URL}/home/`, {
       gatepass_id: gatepassId,
       time_in: timeIn,
       time_out: timeOut,
@@ -69,7 +81,7 @@ export const GatepassService = {
   },
 
   downloadGatepass: async (gatepassId: number) => {
-    const response = await axios.get(`${API_URL}/home/gatepass/${gatepassId}/pdf/`, {
+    const response = await authAxios().get(`${API_URL}/home/gatepass/${gatepassId}/pdf/`, {
       responseType: "blob",
     });
     
