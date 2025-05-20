@@ -32,7 +32,7 @@ export const DashboardLayout = ({ title, subtitle, children, actionButton }: Das
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8 flex justify-between items-center">
           <motion.div
@@ -64,11 +64,11 @@ export const DashboardLayout = ({ title, subtitle, children, actionButton }: Das
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-8"
+          className="mb-6"
         >
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-xl p-6 text-white">
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
             <h2 className="text-xl font-bold mb-2">{subtitle}</h2>
-            <p className="opacity-90 text-sm">
+            <p className="text-gray-600 text-sm">
               Efficiently manage gate passes with our streamlined system
             </p>
           </div>

@@ -11,7 +11,8 @@ import { GatepassService } from "@/services/gatepass-service";
 import { motion, AnimatePresence } from "framer-motion";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { GatepassCard } from "@/components/GatepassCard";
-import { PlusCircle, Clock, ClipboardEdit, FileText } from "lucide-react";
+import { DashboardAnalytics } from "@/components/DashboardAnalytics";
+import { PlusCircle, Clock, ClipboardEdit, FileText, Download } from "lucide-react";
 
 const WorkmanDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -198,137 +199,149 @@ const WorkmanDashboard = () => {
           </div>
         </div>
       ) : (
-        <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid grid-cols-3 mb-8">
-            <TabsTrigger value="pending" className="relative">
-              Pending
-              {pendingGatepasses.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {pendingGatepasses.length}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="approved">Approved</TabsTrigger>
-            <TabsTrigger value="rejected">Rejected</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="pending">
-            <AnimatePresence>
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="show"
-              >
-                {pendingGatepasses.length === 0 ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="text-center py-12 text-gray-500"
-                  >
-                    No pending gate passes
-                  </motion.div>
-                ) : (
-                  pendingGatepasses.map((gatepass) => (
-                    <GatepassCard 
-                      key={gatepass.id}
-                      gatepass={gatepass}
-                      actions={
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                          onClick={() => handleOpenEditDialog(gatepass)}
-                        >
-                          <ClipboardEdit className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                      }
-                    />
-                  ))
+        <>
+          {/* Analytics Section */}
+          <DashboardAnalytics 
+            pendingCount={pendingGatepasses.length} 
+            approvedCount={approvedGatepasses.length}
+            rejectedCount={rejectedGatepasses.length}
+          />
+          
+          <Tabs defaultValue="pending" className="w-full">
+            <TabsList className="grid grid-cols-3 mb-6">
+              <TabsTrigger value="pending" className="relative">
+                Pending
+                {pendingGatepasses.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {pendingGatepasses.length}
+                  </span>
                 )}
-              </motion.div>
-            </AnimatePresence>
-          </TabsContent>
+              </TabsTrigger>
+              <TabsTrigger value="approved">Approved</TabsTrigger>
+              <TabsTrigger value="rejected">Rejected</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="approved">
-            <AnimatePresence>
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="show"
-              >
-                {approvedGatepasses.length === 0 ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="text-center py-12 text-gray-500"
-                  >
-                    No approved gate passes
-                  </motion.div>
-                ) : (
-                  approvedGatepasses.map((gatepass) => (
-                    <GatepassCard 
-                      key={gatepass.id}
-                      gatepass={gatepass}
-                      actions={
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDownloadPdf(gatepass.id)}
-                          className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
-                        >
-                          <Download className="h-4 w-4 mr-1" />
-                          Download PDF
-                        </Button>
-                      }
-                    />
-                  ))
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </TabsContent>
+            <TabsContent value="pending">
+              <AnimatePresence>
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
+                >
+                  {pendingGatepasses.length === 0 ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="col-span-full text-center py-12 text-gray-500"
+                    >
+                      No pending gate passes
+                    </motion.div>
+                  ) : (
+                    pendingGatepasses.map((gatepass) => (
+                      <GatepassCard 
+                        key={gatepass.id}
+                        gatepass={gatepass}
+                        actions={
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs py-0 px-2 h-6"
+                            onClick={() => handleOpenEditDialog(gatepass)}
+                          >
+                            <ClipboardEdit className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                        }
+                      />
+                    ))
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </TabsContent>
 
-          <TabsContent value="rejected">
-            <AnimatePresence>
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="show"
-              >
-                {rejectedGatepasses.length === 0 ? (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="text-center py-12 text-gray-500"
-                  >
-                    No rejected gate passes
-                  </motion.div>
-                ) : (
-                  rejectedGatepasses.map((gatepass) => (
-                    <GatepassCard 
-                      key={gatepass.id}
-                      gatepass={gatepass}
-                      actions={
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                          onClick={() => handleOpenEditDialog(gatepass)}
-                        >
-                          <ClipboardEdit className="h-4 w-4 mr-1" />
-                          Edit & Resubmit
-                        </Button>
-                      }
-                    />
-                  ))
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="approved">
+              <AnimatePresence>
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
+                >
+                  {approvedGatepasses.length === 0 ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="col-span-full text-center py-12 text-gray-500"
+                    >
+                      No approved gate passes
+                    </motion.div>
+                  ) : (
+                    approvedGatepasses.map((gatepass) => (
+                      <GatepassCard 
+                        key={gatepass.id}
+                        gatepass={gatepass}
+                        actions={
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadPdf(gatepass.id)}
+                            className="text-indigo-600 border-indigo-200 hover:bg-indigo-50 text-xs py-0 px-2 h-6"
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            PDF
+                          </Button>
+                        }
+                      />
+                    ))
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </TabsContent>
+
+            <TabsContent value="rejected">
+              <AnimatePresence>
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
+                >
+                  {rejectedGatepasses.length === 0 ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="col-span-full text-center py-12 text-gray-500"
+                    >
+                      No rejected gate passes
+                    </motion.div>
+                  ) : (
+                    rejectedGatepasses.map((gatepass) => (
+                      <GatepassCard 
+                        key={gatepass.id}
+                        gatepass={gatepass}
+                        actions={
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50 text-xs py-0 px-2 h-6"
+                            onClick={() => handleOpenEditDialog(gatepass)}
+                          >
+                            <ClipboardEdit className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                        }
+                      />
+                    ))
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </TabsContent>
+          </Tabs>
+        </>
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
