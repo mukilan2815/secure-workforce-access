@@ -279,6 +279,7 @@ const WorkmanDashboard = () => {
                           onClick={() => handleDownloadPdf(gatepass.id)}
                           className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
                         >
+                          <Download className="h-4 w-4 mr-1" />
                           Download PDF
                         </Button>
                       }

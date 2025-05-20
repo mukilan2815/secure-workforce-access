@@ -1,138 +1,161 @@
 
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 
-const LoginAnimation = () => {
-  const badgeVariants = {
-    initial: { scale: 0.8, opacity: 0 },
-    animate: { 
-      scale: [0.8, 1.15, 0.95, 1.05, 1],
+export const LoginAnimation = () => {
+  const [animationStarted, setAnimationStarted] = useState(false);
+
+  useEffect(() => {
+    // Start the animation after a small delay
+    const timer = setTimeout(() => {
+      setAnimationStarted(true);
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
       opacity: 1,
       transition: {
-        duration: 1.2,
-        ease: "easeOut",
-      }
-    },
-    pulse: {
-      scale: [1, 1.05, 1],
-      boxShadow: [
-        "0 0 0 0 rgba(79, 70, 229, 0)",
-        "0 0 0 15px rgba(79, 70, 229, 0.2)",
-        "0 0 0 0 rgba(79, 70, 229, 0)"
-      ],
-      transition: {
-        duration: 2,
-        ease: "easeInOut",
-        repeat: Infinity,
-        repeatType: "reverse",
+        staggerChildren: 0.3,
+        delayChildren: 0.2,
       }
     }
   };
 
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.6,
+        ease: "easeOut"
+      }
+    }
+  };
+
+  const bubbleVariants = {
+    hidden: { scale: 0, opacity: 0 },
+    visible: (custom: number) => ({
+      scale: 1,
+      opacity: 0.85,
+      transition: {
+        delay: custom * 0.2,
+        duration: 0.5,
+        ease: "easeOut"
+      }
+    }),
+    hover: {
+      scale: 1.1,
+      opacity: 1,
+      transition: {
+        duration: 0.2
+      }
+    }
+  };
+
+  const logoVariants = {
+    initial: { scale: 0.95, opacity: 0 },
+    animate: { 
+      scale: [1, 1.05, 1], 
+      opacity: 1,
+      transition: { 
+        duration: 1.2,
+        ease: "easeOut" 
+      }
+    }
+  };
+
+  const pulseAnimation = {
+    scale: [1, 1.03, 1],
+    boxShadow: [
+      "0 0 0 0 rgba(79, 70, 229, 0.1)",
+      "0 0 0 20px rgba(79, 70, 229, 0)",
+      "0 0 0 0 rgba(79, 70, 229, 0)"
+    ],
+    transition: {
+      duration: 2,
+      ease: "easeInOut",
+      repeat: Infinity,
+      repeatType: "loop" as const
+    }
+  };
+
   return (
-    <div className="flex justify-center items-center h-36">
+    <div className="relative h-full flex items-center justify-center overflow-hidden">
+      {/* Background gradient bubbles */}
       <motion.div
-        className="relative"
-        animate={{ 
-          rotate: 360 
-        }}
-        transition={{ 
-          duration: 20, 
-          repeat: Infinity, 
-          ease: "linear" 
-        }}
+        className="absolute inset-0 z-0"
+        variants={containerVariants}
+        initial="hidden"
+        animate={animationStarted ? "visible" : "hidden"}
       >
-        {/* Outer orbit */}
-        <div className="absolute w-32 h-32 rounded-full border-2 border-indigo-300/30"></div>
-        
-        {/* Middle orbit */}
+        {/* Decorative background elements */}
         <motion.div
-          className="absolute w-24 h-24 top-4 left-4 rounded-full border-2 border-indigo-400/40"
-          animate={{ rotate: -360 }}
-          transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-        >
-          {/* Dot in middle orbit */}
-          <motion.div
-            className="absolute top-0 left-1/2 -translate-x-1.5 w-3 h-3 bg-blue-500 rounded-full"
-            animate={{
-              boxShadow: ["0 0 0 0 rgba(59, 130, 246, 0)", "0 0 0 8px rgba(59, 130, 246, 0.3)", "0 0 0 0 rgba(59, 130, 246, 0)"],
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
-          ></motion.div>
-        </motion.div>
-        
-        {/* Inner orbit */}
-        <div className="absolute w-16 h-16 top-8 left-8 rounded-full border-2 border-indigo-500/60"></div>
-        
-        {/* Badge in center */}
-        <motion.div 
-          className="absolute top-10 left-10 w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg"
-          variants={badgeVariants}
-          initial="initial"
-          animate={["animate", "pulse"]}
+          variants={bubbleVariants}
+          custom={0}
+          className="absolute top-10 left-20 w-64 h-64 rounded-full bg-blue-300 opacity-10 blur-xl"
+          whileHover="hover"
+        />
+        <motion.div
+          variants={bubbleVariants}
+          custom={1}
+          className="absolute bottom-10 right-20 w-80 h-80 rounded-full bg-indigo-400 opacity-10 blur-xl"
+          whileHover="hover"
+        />
+        <motion.div
+          variants={bubbleVariants}
+          custom={2}
+          className="absolute top-1/4 right-1/4 w-40 h-40 rounded-full bg-purple-400 opacity-10 blur-xl"
+          whileHover="hover"
+        />
+      </motion.div>
+
+      {/* Central logo */}
+      <motion.div
+        className="relative z-10 flex flex-col items-center"
+        variants={logoVariants}
+        initial="initial"
+        animate="animate"
+      >
+        <motion.div
+          className="flex justify-center items-center w-32 h-32 rounded-full bg-white shadow-xl mb-6"
+          animate={pulseAnimation}
         >
           <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            className="h-6 w-6" 
-            fill="none" 
-            viewBox="0 0 24 24" 
+            className="w-20 h-20 text-indigo-600" 
+            viewBox="0 0 24 24"
+            fill="none"
             stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" 
-            />
+            <path d="M3 5H21V11H3V5Z"></path>
+            <path d="M21 11V19H3V11"></path>
+            <path d="M9 11V19"></path>
+            <path d="M3 11H21"></path>
+            <path d="M3 15H9"></path>
           </svg>
         </motion.div>
+
+        <motion.h1
+          variants={itemVariants}
+          className="text-3xl font-bold text-gray-800 mb-2"
+        >
+          GatePass System
+        </motion.h1>
         
-        {/* Animated particles */}
-        <motion.div
-          className="absolute top-4 left-16 w-2 h-2 bg-blue-400 rounded-full"
-          animate={{ 
-            y: [0, 8, 0],
-            opacity: [0.5, 1, 0.5],
-            scale: [0.8, 1.2, 0.8],
-          }}
-          transition={{ 
-            duration: 2.5, 
-            repeat: Infinity,
-            repeatType: "reverse", 
-          }}
-        ></motion.div>
-        
-        <motion.div
-          className="absolute top-20 left-6 w-2 h-2 bg-indigo-500 rounded-full"
-          animate={{ 
-            y: [0, -8, 0],
-            opacity: [0.5, 1, 0.5],
-            scale: [0.8, 1.2, 0.8],
-          }}
-          transition={{ 
-            duration: 3, 
-            repeat: Infinity,
-            repeatType: "reverse", 
-            delay: 0.5,
-          }}
-        ></motion.div>
-        
-        <motion.div
-          className="absolute top-12 left-24 w-1.5 h-1.5 bg-purple-400 rounded-full"
-          animate={{ 
-            x: [0, 6, 0],
-            opacity: [0.5, 1, 0.5],
-            scale: [0.8, 1.1, 0.8],
-          }}
-          transition={{ 
-            duration: 2.2, 
-            repeat: Infinity,
-            repeatType: "reverse", 
-            delay: 1,
-          }}
-        ></motion.div>
+        <motion.p 
+          variants={itemVariants}
+          className="text-gray-600 text-center max-w-md px-4"
+        >
+          Secure and efficient gate pass management system for your organization
+        </motion.p>
       </motion.div>
     </div>
   );
 };
-
-export default LoginAnimation;

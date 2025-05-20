@@ -1,26 +1,26 @@
 
+import { ReactNode } from "react";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { CheckCircle, Clock, CalendarClock, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Calendar, FileText, User, UserCheck } from "lucide-react";
 
 interface GatepassCardProps {
   gatepass: any;
-  actions?: React.ReactNode;
+  actions?: ReactNode;
   showWorkmanName?: boolean;
 }
 
 export const GatepassCard = ({ gatepass, actions, showWorkmanName = false }: GatepassCardProps) => {
+  // Helper functions
   const formatTime = (timeString: string) => {
     try {
-      // Handle time format HH:MM:SS
-      return timeString.substring(0, 5); // Extract HH:MM
+      return timeString?.substring(0, 5) || "-"; // Extract HH:MM
     } catch (e) {
-      return timeString;
+      return timeString || "-";
     }
   };
 
-  const formatDateTime = (dateTimeString: string | null) => {
+  const formatDateTime = (dateTimeString: string) => {
     if (!dateTimeString) return "-";
     try {
       const date = new Date(dateTimeString);
@@ -29,118 +29,135 @@ export const GatepassCard = ({ gatepass, actions, showWorkmanName = false }: Gat
         month: 'short',
         year: 'numeric',
         hour: '2-digit',
-        minute: '2-digit',
+        minute: '2-digit'
       }).format(date);
     } catch (e) {
       return dateTimeString;
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'approved':
-        return "bg-green-100 text-green-800 border-green-300";
-      case 'rejected':
-        return "bg-red-100 text-red-800 border-red-300";
-      case 'pending':
-      default:
-        return "bg-amber-100 text-amber-800 border-amber-300";
+  // Get status-specific styling
+  const getStatusColor = () => {
+    switch(gatepass.approval_status.toLowerCase()) {
+      case 'approved': return 'bg-green-500';
+      case 'rejected': return 'bg-red-500';
+      default: return 'bg-blue-500';
     }
   };
 
+  const ticketVariants = {
+    initial: { opacity: 0, y: 10 },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+    hover: { y: -5, transition: { duration: 0.2 } }
+  };
+  
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 10 }}
-      transition={{ duration: 0.3 }}
-      whileHover={{ y: -3, transition: { duration: 0.2 } }}
-      className="mb-4"
+    <motion.div 
+      className="mb-6"
+      variants={ticketVariants}
+      initial="initial"
+      animate="animate"
+      whileHover="hover"
     >
-      <Card className="overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200">
-        <CardHeader className="pb-2 bg-gradient-to-r from-gray-50 to-white">
+      <div className="relative flex rounded-lg overflow-hidden shadow-md bg-white">
+        {/* Left decorative edge */}
+        <div className="absolute left-0 top-0 h-full w-2 flex flex-col">
+          <div className={`flex-grow ${getStatusColor()}`}></div>
+        </div>
+
+        {/* Ticket notches */}
+        <div className="absolute left-0 top-0 h-full flex flex-col justify-between items-center">
+          {Array(10).fill(0).map((_, i) => (
+            <div key={i} className="w-2 h-2 bg-gray-100"></div>
+          ))}
+        </div>
+        
+        {/* Main ticket content */}
+        <div className="flex-grow pl-6 p-4">
+          {/* Ticket header */}
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-lg flex items-center gap-1">
-                <span className="text-gray-700">Request #{gatepass.id}</span>
-              </CardTitle>
-              <CardDescription>
-                {showWorkmanName && gatepass.workman_username && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <User className="h-3.5 w-3.5 text-gray-400" />
-                    <span>{gatepass.workman_username}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-1 mt-1">
-                  <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                  <span>{formatDateTime(gatepass.created_at)}</span>
-                </div>
-              </CardDescription>
+              <div className="flex items-center">
+                <h3 className="text-xl font-semibold text-gray-900">Gate Pass #{gatepass.id}</h3>
+                <Badge 
+                  className="ml-2" 
+                  variant={
+                    gatepass.approval_status === "approved" ? "success" : 
+                    gatepass.approval_status === "rejected" ? "destructive" : 
+                    "outline"
+                  }
+                >
+                  {gatepass.approval_status.toUpperCase()}
+                </Badge>
+              </div>
+              
+              {showWorkmanName && (
+                <p className="text-sm text-gray-600 mt-1">
+                  Issued to: {gatepass.workman_username || "Unknown"}
+                </p>
+              )}
             </div>
-            <div className={`px-2.5 py-1 text-xs font-medium rounded-full border ${getStatusColor(gatepass.approval_status)}`}>
-              {gatepass.approval_status.toUpperCase()}
+            
+            <div className="text-right">
+              <p className="text-xs text-gray-500 flex items-center justify-end">
+                <CalendarClock className="h-3 w-3 mr-1" />
+                Created: {formatDateTime(gatepass.created_at)}
+              </p>
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-blue-500" />
+
+          {/* Ticket details */}
+          <div className="grid grid-cols-2 gap-3 my-4 p-3 bg-gray-50 rounded-md">
+            <div className="flex items-center">
+              <Clock className="h-4 w-4 text-gray-500 mr-2" />
               <div>
-                <div className="text-xs text-gray-500 font-medium">Time Out</div>
-                <div>{formatTime(gatepass.time_out)}</div>
+                <p className="text-xs font-medium text-gray-500">Time Out</p>
+                <p className="font-semibold">{formatTime(gatepass.time_out)}</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-indigo-500" />
+            <div className="flex items-center">
+              <Clock className="h-4 w-4 text-gray-500 mr-2" />
               <div>
-                <div className="text-xs text-gray-500 font-medium">Time In</div>
-                <div>{formatTime(gatepass.time_in)}</div>
+                <p className="text-xs font-medium text-gray-500">Time In</p>
+                <p className="font-semibold">{formatTime(gatepass.time_in)}</p>
               </div>
             </div>
-            
-            <div className="col-span-2 mt-1">
-              <div className="flex items-start gap-2">
-                <FileText className="h-4 w-4 text-gray-500 mt-0.5" />
-                <div>
-                  <div className="text-xs text-gray-500 font-medium">Purpose</div>
-                  <div className="text-gray-700">{gatepass.purpose}</div>
-                </div>
-              </div>
-            </div>
-            
-            {gatepass.approval_status !== "pending" && (
-              <>
-                <div className="col-span-2 mt-1">
-                  <div className="flex items-start gap-2">
-                    <UserCheck className="h-4 w-4 text-gray-500 mt-0.5" />
-                    <div>
-                      <div className="text-xs text-gray-500 font-medium">Processed by</div>
-                      <div>{gatepass.approved_by_username || "N/A"}</div>
-                      <div className="text-xs text-gray-500">
-                        {formatDateTime(gatepass.approved_at)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-            
-            {gatepass.approval_status === "rejected" && gatepass.rejection_reason && (
-              <div className="col-span-2 mt-1 bg-red-50 p-2 rounded border border-red-100">
-                <div className="text-xs text-red-800 font-medium">Reason for rejection:</div>
-                <div className="text-red-700 text-sm">{gatepass.rejection_reason}</div>
-              </div>
-            )}
           </div>
-        </CardContent>
-        {actions && (
-          <CardFooter className="pt-0 pb-3 flex gap-2 justify-end border-t border-gray-100 mt-3 pt-3 bg-gray-50/50">
-            {actions}
-          </CardFooter>
-        )}
-      </Card>
+          
+          <div className="mb-4">
+            <div className="flex items-start">
+              <FileText className="h-4 w-4 text-gray-500 mr-2 mt-1" />
+              <div>
+                <p className="text-xs font-medium text-gray-500">Purpose</p>
+                <p className="text-sm">{gatepass.purpose || "-"}</p>
+              </div>
+            </div>
+          </div>
+          
+          {gatepass.rejection_reason && (
+            <div className="mb-4 p-3 bg-red-50 rounded-md border border-red-100">
+              <p className="text-xs font-medium text-red-700">Rejection Reason</p>
+              <p className="text-sm text-red-600">{gatepass.rejection_reason}</p>
+            </div>
+          )}
+
+          {/* Actions */}
+          {actions && (
+            <div className="flex items-center justify-end gap-2 mt-4">
+              {actions}
+            </div>
+          )}
+        </div>
+
+        {/* Status indicator */}
+        <div className="flex flex-col justify-center items-center px-4 bg-gray-50 border-l">
+          <div className={`w-3 h-3 rounded-full ${getStatusColor()} mb-1`}></div>
+          <div className="text-xs font-medium uppercase text-gray-500 rotate-90 whitespace-nowrap">
+            {gatepass.approval_status}
+          </div>
+        </div>
+      </div>
     </motion.div>
   );
 };
