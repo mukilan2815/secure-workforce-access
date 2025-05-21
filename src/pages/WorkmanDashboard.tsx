@@ -186,8 +186,8 @@ const WorkmanDashboard = () => {
 
   return (
     <DashboardLayout 
-      title="Workman Dashboard" 
-      subtitle="Welcome to the Gate Pass Management System" 
+      title="Workmen Dashboard" 
+      subtitle="Welcome to the Man Gate Pass Management System" 
       actionButton={actionButton}
     >
       {loading ? (

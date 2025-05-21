@@ -131,7 +131,7 @@ const SSEDashboard = () => {
   return (
     <DashboardLayout 
       title="SSE Dashboard" 
-      subtitle="Welcome to the Gate Pass Management System"
+      subtitle="Welcome to the Man Gate Pass Management System"
       actionButton={
         <Button
           variant="outline"

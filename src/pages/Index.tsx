@@ -102,13 +102,8 @@ const Index = () => {
               <div className="mb-6">
                 <LoginAnimation />
               </div>
-              <CardTitle className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Gate Pass System
-              </CardTitle>
+             
             </motion.div>
-            <CardDescription className="text-sm text-gray-600">
-              Secure Access Management Portal
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">

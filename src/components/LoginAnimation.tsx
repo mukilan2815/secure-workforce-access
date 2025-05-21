@@ -2,7 +2,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
-export const LoginAnimation = () => {
+const LoginAnimation = () => {
   const [animationStarted, setAnimationStarted] = useState(false);
 
   useEffect(() => {
@@ -159,3 +159,5 @@ export const LoginAnimation = () => {
     </div>
   );
 };
+
+export default LoginAnimation;
